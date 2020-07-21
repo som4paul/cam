@@ -1,6 +1,7 @@
 <?php
 
-
+ini_set("memory_limit", "-1");
+set_time_limit(0);
  function select_data_from_db($table_name,$conn)
 {
 
@@ -51,24 +52,24 @@ else //after successfull connection
   $myrows_tv_vod_category_list=select_data_from_db("tv_vod_category_list",$conn);
  
   $myrows_stream_category =  select_data_from_db("stream_categories",$conn);
-  //echo "<pre>" ; print_r($myrows_tv_vod_category_list) ;
+  //echo "<pre>" ; print_r($myrows_tv_vod_category_list) ;die;
 
 
 
+/*
+  if(count($myrows_tv_vod_category_list)>1){
 
-  if(count($myrows_tv_vod_category_list[0])>1){
 
 
-
-  	for($i=0;$i<count($myrows_tv_vod_category_list[0]);$i++)
+  	for($i=0;$i<count($myrows_tv_vod_category_list);$i++)
   	{
 
   		$sql = "INSERT INTO stream_categories (category_type, category_name, parent_id,cat_order)
-    VALUES ('".$myrows_tv_vod_category_list[0][$i]['title']."','".$myrows_tv_vod_category_list[0][$i]['description']."','".'0'."','".'100'."')";
+    VALUES ('".$myrows_tv_vod_category_list[$i]['title']."','".$myrows_tv_vod_category_list[$i]['description']."','".'0'."','".'100'."')";
 
     $result = mysqli_query($conn,$sql);
     	}//end of for()//inserting one by one
-  }//i.e. if tv_vod_category_list has data
+  }*///i.e. if tv_vod_category_list has data
   /*echo "<pre>" ; print_r($myrows_stream_category) ; 
     die;*/
 
@@ -188,8 +189,8 @@ if(strpos( $mystring,$columnnames[$j])!== false)
 $values  = implode(", ", $escaped_values);
 
 /*echo "<pre>" ; print_r($columns) ; 
-echo "<pre>" ; print_r($values) ; die;
-*/
+echo "<pre>" ; print_r($values) ; die;*/
+
 $sql = "INSERT INTO streams($columns) VALUES ($values)";
 
 //echo $sql ; die; 
@@ -198,7 +199,7 @@ $sql = "INSERT INTO streams($columns) VALUES ($values)";
 //echo $sql; die();
     mysqli_query($conn,$sql);//or die (mysqli_error($conn));
 
-    
+    echo $i."Row(s) updated :) !" ; 
     	}//end of for()//inserting one by one
   }//i.e. if tv_vod_category_list has data
 echo "Data cloning from tv_vod_category_list->stream_category and 

@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - openbharat-apk-build-20260807
+  pull_request:
+    branches:
+      - master
   workflow_dispatch:
 
 jobs:

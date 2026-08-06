@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
+<title>OpenBharat Maps</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<style>
+html,body,#map{height:100%;margin:0;font-family:Arial,sans-serif}#top{position:fixed;z-index:1000;top:12px;left:12px;right:12px;display:flex;gap:8px}.box{background:#fff;border-radius:14px;box-shadow:0 3px 14px #0003;padding:10px}#search{flex:1;border:0;outline:0;font-size:16px}.btn{border:0;background:#fff;border-radius:12px;padding:10px 12px;box-shadow:0 3px 14px #0003;font-weight:700}#panel{position:fixed;z-index:1000;bottom:18px;left:12px;right:12px;display:flex;gap:8px;justify-content:center}.badge{position:fixed;z-index:1000;top:70px;left:12px;background:#fff;padding:8px 11px;border-radius:10px;box-shadow:0 3px 14px #0003;font-size:12px}.leaflet-control-attribution{font-size:9px}
+</style>
+</head>
+<body>
+<div id="top"><div class="box" style="display:flex;flex:1"><input id="search" placeholder="Search any place in India"/><button class="btn" onclick="searchPlace()">Go</button></div></div>
+<div class="badge" id="status">Open map data • India</div>
+<div id="panel"><button class="btn" onclick="useRoad()">Road</button><button class="btn" onclick="useSatellite()">Satellite</button><button class="btn" onclick="locateMe()">My location</button><button class="btn" onclick="routeToSearch()">Route</button></div>
+<div id="map"></div>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+const map=L.map('map',{zoomControl:false}).setView([22.8,79.0],5);
+const road=L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap contributors'});
+const satellite=L.tileLayer('https://tiles.maps.eox.at/wmts/1.0.0/s2cloudless-2020_3857/default/g/{z}/{y}/{x}.jpg',{maxZoom:15,attribution:'Sentinel-2 cloudless © EOX'});
+road.addTo(map);let active=road,lastResult=null,userPos=null,marker=null,route=null;
+function setStatus(t){document.getElementById('status').textContent=t}
+function useRoad(){map.removeLayer(active);active=road;road.addTo(map);setStatus('Road map • OpenStreetMap')}
+function useSatellite(){map.removeLayer(active);active=satellite;satellite.addTo(map);setStatus('Satellite • Sentinel-2 cloudless')}
+async function searchPlace(){const q=document.getElementById('search').value.trim();if(!q)return;setStatus('Searching…');try{const r=await fetch('https://nominatim.openstreetmap.org/search?format=json&countrycodes=in&limit=1&q='+encodeURIComponent(q),{headers:{'Accept-Language':'en'}});const a=await r.json();if(!a.length){setStatus('No place found in India');return}lastResult={lat:+a[0].lat,lon:+a[0].lon,name:a[0].display_name};map.setView([lastResult.lat,lastResult.lon],15);if(marker)map.removeLayer(marker);marker=L.marker([lastResult.lat,lastResult.lon]).addTo(map).bindPopup(lastResult.name).openPopup();setStatus(lastResult.name)}catch(e){setStatus('Search unavailable. Check internet.') }}
+function locateMe(){setStatus('Finding location…');navigator.geolocation.getCurrentPosition(p=>{userPos={lat:p.coords.latitude,lon:p.coords.longitude};map.setView([userPos.lat,userPos.lon],16);L.circleMarker([userPos.lat,userPos.lon],{radius:8}).addTo(map).bindPopup('You are here').openPopup();setStatus('Current location')},()=>setStatus('Location permission unavailable'),{enableHighAccuracy:true,timeout:12000})}
+async function routeToSearch(){if(!lastResult){await searchPlace();if(!lastResult)return}const start=userPos||{lat:map.getCenter().lat,lon:map.getCenter().lng};setStatus('Calculating route…');try{const u=`https://router.project-osrm.org/route/v1/driving/${start.lon},${start.lat};${lastResult.lon},${lastResult.lat}?overview=full&geometries=geojson`;const r=await fetch(u);const j=await r.json();if(!j.routes?.length){setStatus('Route unavailable');return}if(route)map.removeLayer(route);route=L.geoJSON(j.routes[0].geometry,{style:{weight:6}}).addTo(map);map.fitBounds(route.getBounds(),{padding:[35,35]});setStatus((j.routes[0].distance/1000).toFixed(1)+' km • '+Math.round(j.routes[0].duration/60)+' min')}catch(e){setStatus('Routing unavailable. Check internet.') }}
+document.getElementById('search').addEventListener('keydown',e=>{if(e.key==='Enter')searchPlace()});
+</script>
+</body>
+</html>
